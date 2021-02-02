@@ -156,7 +156,8 @@ export function createFromProvider(provider: IProvider, version?: string, compon
   ];
 
   const client = Client.initWithMiddleware({
-    middleware: chainMiddleware(...middleware)
+    middleware: chainMiddleware(...middleware),
+    baseUrl: provider.baseUrl
   });
 
   const graph = new Graph(client, version);

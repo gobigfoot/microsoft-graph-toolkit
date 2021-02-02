@@ -39,6 +39,18 @@ export abstract class IProvider implements AuthenticationProvider {
     return this._state;
   }
 
+  /**
+   * returns _baseUrl
+   *
+   * @readonly
+   * @type {string}
+   * @memberof IProvider
+   */
+  get baseUrl(): string {
+    return this._baseUrl;
+  }
+  private _baseUrl: string;
+
   constructor() {
     this._state = ProviderState.Loading;
   }

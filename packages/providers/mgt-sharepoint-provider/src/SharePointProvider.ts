@@ -31,6 +31,8 @@ declare interface AadTokenProvider {
 declare interface WebPartContext {
   // tslint:disable-next-line: completed-docs
   aadTokenProviderFactory: any;
+  // tslint:disable-next-line: completed-docs
+  msGraphClientFactory: any;
 }
 
 /**
@@ -79,18 +81,40 @@ export class SharePointProvider extends IProvider {
   public authority: string;
   private _idToken: string;
 
+  /**
+   * returns _baseUrl
+   *
+   * @readonly
+   * @type {string}
+   * @memberof SharePointProvider
+   */
+  get baseUrl(): string {
+    return this._baseUrl;
+  }
+  private _baseUrl: string;
+
   private _provider: AadTokenProvider;
 
-  constructor(context: WebPartContext) {
+  constructor(context: WebPartContext, baseUrl?: string) {
     super();
+    this.setBaseUrl(context, baseUrl)
+      .then(() => {
+        context.aadTokenProviderFactory.getTokenProvider().then(
+          (tokenProvider: AadTokenProvider): void => {
+            this._provider = tokenProvider;
+            this.graph = createFromProvider(this);
+            this.internalLogin();
+          }
+        );
 
-    context.aadTokenProviderFactory.getTokenProvider().then(
-      (tokenProvider: AadTokenProvider): void => {
-        this._provider = tokenProvider;
-        this.graph = createFromProvider(this);
-        this.internalLogin();
-      }
-    );
+      })
+  }
+
+  private async setBaseUrl(context: WebPartContext, baseUrl?: string) {
+    if(!baseUrl) {
+      baseUrl = await context.msGraphClientFactory.getClient().then(client => client.constructor._graphBaseUrl).catch(e => 'https://graph.microsoft.com');
+    }
+    this._baseUrl = baseUrl;
   }
 
   /**
@@ -102,7 +126,7 @@ export class SharePointProvider extends IProvider {
   public async getAccessToken(): Promise<string> {
     let accessToken: string;
     try {
-      accessToken = await this.provider.getToken('https://graph.microsoft.com');
+      accessToken = await this.provider.getToken(this.baseUrl);
     } catch (e) {
       throw e;
     }
